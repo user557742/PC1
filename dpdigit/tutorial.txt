@@ -1,0 +1,23 @@
+#-----------------------------------------DP digit ----------------------------------------------------------
+$ Intro : là kỹ thuật pro max để tính toán trong đoạn [L,R] trên miền số nguyên (thường là đếm )
+* Tư tưởng : để tính toán ta đặt f(x) là hàm kết quả cho đoạn [0,x] từ đó đáp số là | f(r)-f(l-1) |
+
+// Để tính f(x) một cách hiệu quả ta coi số x như một xâu ký tự X = [...]
+ta tạo ra các số A từ số x bằng cách duyệt qua từng chữ số của x qua đó có thể tính toán được kết quả 
++ gọi lim[i] là chữ số của x tại vị trí thứ i
++ ta có trạng thái quy hoạch động là dp[pos][bang][toan0][..]
+    pos : vị trí của chữ số đang xét hiện tại [0,n]
+    bang : nếu prefix của số đang tạo ra bằng prefix của x (0 : nếu khác , 1 : nếu bằng)
+    toan0 : nếu các chữ số ở trước đều là 0 (0 : nếu khác , 1 : nếu bằng)
+    ... : đặc điểm bài toán 
+* thiết kế trạng thái và chuyển tiếp :
+    + giới hạn chữ số :
+        nếu bang=1 chữ số nối tiếp vào chỉ có thể thuộc [0,lim[pos]]
+        ngược lại thì thuộc [0,9]
+    + cập nhật thông tin phụ
+* cách triển khai 
+    + top-down : đệ quy dùng dp[pos][bang][toan0][..] để lưu kq
+    + bottom-up : chính là khử đệ quy
+
+
+
