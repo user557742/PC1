@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digit DP - Quy Hoạch Động Chữ Số trong Lập Trình Thi Đấu</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: auto; padding: 20px; }
+    h1 { font-size: 2.2rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.6rem; margin-top: 1.5rem; }
+    h3 { font-size: 1.3rem; margin-top: 1rem; }
+    p { margin: 0.8rem 0; }
+    pre { background: #f7f7f7; padding: 15px; overflow-x: auto; border-radius: 4px; }
+    code { font-family: Consolas, 'Courier New', monospace; }
+    ul, ol { margin-left: 1.5rem; }
+    .note { background: #eef8ff; padding: 10px 15px; border-left: 4px solid #66aaff; border-radius: 3px; }
+    .example { background: #f0f9f0; padding: 15px; border-left: 4px solid #4caf50; border-radius: 3px; }
+    footer { margin-top: 2rem; font-size: 0.9rem; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Quy Hoạch Động Chữ Số (Digit DP)</h1>
+
+  <p><strong>Digit DP</strong> là kỹ thuật chuyên sâu dùng để <em>đếm</em> và <em>tổng hợp</em> thông tin của các số trong khoảng <code>[L, R]</code> dựa trên thuộc tính của chữ số. Phương pháp này biến bài toán độ lớn cao (ví dụ R lên đến 10<sup>18</sup>) thành bài toán <strong>động quy hoạch</strong> với số lượng trạng thái hạn chế.</p>
+
+  <h2>1. Cấu trúc chung của Digit DP</h2>
+  <h3>1.1. Trạng thái (State)</h3>
+  <p>Một state trong Digit DP bao gồm:</p>
+  <ul>
+    <li><code>pos</code>: vị trí chữ số hiện tại (từ 0 đến n-1, với n = số chữ số của R).</li>
+    <li><code>tight</code>: cờ (0 hoặc 1) chỉ ra việc prefix đã xây dựng có đang <em>bằng</em> prefix của số R hay đã <em>nhỏ hơn</em>. Điều này giúp đảm bảo không vượt quá R khi tính <code>F(R)</code>.</li>
+    <li>Thông tin phụ thuộc vào bài toán (ví dụ: <code>sumMod</code>, <code>countDigits</code>, <code>prevDigit</code>, <code>started</code> để xét số 0 dẫn đầu, v.v.).</li>
+  </ul>
+
+  <h3>1.2. Công thức chuyển trạng thái (Transition)</h3>
+  <ol>
+    <li>Xác định giới hạn chữ số: <code>limit = tight ? digitAt(pos) : 9</code>.</li>
+    <li>Chạy vòng lặp <code>d</code> từ 0 đến <code>limit</code>:
+      <ul>
+        <li>Cập nhật state phụ: ví dụ <code>newSumMod = (sumMod + d) % M</code> hoặc <code>newStarted</code>.</li>
+        <li>Tính <code>newTight = tight && (d == limit)</code>.</li>
+        <li>Gọi đệ quy <code>dp(pos+1, newTight, ...)</code> và cộng dồn.</li>
+      </ul>
+    </li>
+    <li>Memoization: lưu kết quả <code>dp[pos][tight][...]</code> để tránh tính lại.</li>
+  </ol>
+
+  <div class="note">
+    <strong>Lưu ý:</strong> thường chỉ memo khi <code>tight == 0</code> (prefix đã nhỏ hơn) vì khi <code>tight == 1</code> phụ thuộc vào R và ít được tái sử dụng.
+  </div>
+
+  <h2>2. Thiết kế thuật toán chi tiết</h2>
+  <ol>
+    <li><strong>Chuyển R thành mảng chữ số</strong>: lưu các chữ số của R vào mảng hoặc chuỗi để truy cập theo chỉ số.</li>
+    <li><strong>Định nghĩa hàm DP</strong> (đệ quy hoặc lặp):<br>
+      <code>long solve(int pos, bool tight, otherStates...);</code>
+    </li>
+    <li><strong>Điều kiện dừng (Base Case)</strong>: khi <code>pos == n</code>, kiểm tra tính thỏa mãn của state phụ, trả về 1 hoặc 0.</li>
+    <li><strong>Memoization</strong>: dùng mảng hoặc map để lưu kết quả các state đã tính.</li>
+    <li><strong>Tổng hợp kết quả</strong>: <code>answer = F(R) - F(L - 1)</code>. Với <code>F(x)</code> là giá trị hàm DP tính từ 0 đến x.</li>
+  </ol>
+
+  <h2>3. Ví dụ minh họa chi tiết</h2>
+  <div class="example">
+    <h3>Đề bài:</h3>
+    <p>Đếm số nguyên <code>x</code> trong <code>[L, R]</code> sao cho <strong>tổng chữ số chia hết cho 9</strong>.</p>
+
+    <h3>Phân tích state:</h3>
+    <ul>
+      <li><code>pos</code>: vị trí chữ số (0..n-1).</li>
+      <li><code>sumMod</code>: tổng chữ số tính đến <code>pos-1</code> mod 9.</li>
+      <li><code>tight</code>: cờ ràng buộc với R.</li>
+    </ul>
+
+    <h3>Mã C++:</h3>
+    <pre><code>#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+
+string s;
+ll dp[20][9][2];
+
+ll dfs(int pos, int sumMod, int tight) {
+    if (pos == s.size())
+        return (sumMod == 0);
+    if (dp[pos][sumMod][tight] != -1) 
+        return dp[pos][sumMod][tight];
+
+    ll res = 0;
+    int limit = tight ? (s[pos] - '0') : 9;
+    for (int d = 0; d <= limit; ++d) {
+        int nextSum = (sumMod + d) % 9;
+        int nextTight = (tight && (d == limit));
+        res += dfs(pos + 1, nextSum, nextTight);
+    }
+    return dp[pos][sumMod][tight] = res;
+}
+
+ll countUpTo(ll x) {
+    s = to_string(x);
+    memset(dp, -1, sizeof(dp));
+    return dfs(0, 0, 1);
+}
+
+int main() {
+    ll L, R;
+    cin >> L >> R;
+    ll ans = countUpTo(R) - (L > 0 ? countUpTo(L-1) : 0);
+    cout << ans;
+    return 0;
+}
+</code></pre>
+
+    <h3>Giải thích từng bước:</h3>
+    <ol>
+      <li>Chuyển <code>x</code> sang chuỗi <code>s</code>, độ dài <code>n</code>.</li>
+      <li>Gọi <code>dfs(0, 0, 1)</code>, bắt đầu từ chữ số cao nhất, <code>sumMod = 0</code>, <code>tight = 1</code>.</li>
+      <li>Tại <code>pos</code>, giới hạn <code>limit</code> = chữ số R nếu <code>tight</code>=1, ngược lại 9.</li>
+      <li>Với mỗi <code>d=0..limit</code>, cập nhật <code>nextSum</code> và <code>nextTight</code>, đệ quy.
+      </li>
+      <li>Base case: khi <code>pos==n</code>, nếu <code>sumMod==0</code>, trả về 1; else 0.</li>
+      <li>Memoization: lưu vào <code>dp[pos][sumMod][tight]</code> để dùng lại.</li>
+      <li>Kết quả bài toán: <code>countUpTo(R) - countUpTo(L-1)</code>.</li>
+    </ol>
+  </div>
+
+  <h2>4. Bài tập nâng cao gợi ý</h2>
+  <ul>
+    <li>Đếm số trong [L,R] có <code>K</code> chữ số lẻ.</li>
+    <li>Đếm số chia hết <code>D</code> cho trước (state lưu mod D).</li>
+    <li>Đếm số không chứa dãy chữ số chung (ví dụ “13”) – state lưu trạng thái tự động hữu hạn (Automaton).</li>
+    <li>Đếm số với điều kiện liên quan đến vị trí (ví dụ số palindrom).</li>
+    <li>Ứng dụng tổng hợp: tính <em>tổng</em> hoặc <em>tổng bình phương</em> chữ số của tất cả số trong [L,R].</li>
+  </ul>
+
+  <footer>
+    &copy; 2025 - Tham khảo từ các hướng dẫn Digit DP trên GeeksforGeeks, AtCoder Educational DP Contest và các bài Codeforces liên quan.
+  </footer>
+</body>
+</html>
