@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digit DP - Quy Hoạch Động Chữ Số trong Lập Trình Thi Đấu</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: auto; padding: 20px; }
+    h1 { font-size: 2.2rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.6rem; margin-top: 1.5rem; }
+    h3 { font-size: 1.3rem; margin-top: 1rem; }
+    p { margin: 0.8rem 0; }
+    pre { background: #f7f7f7; padding: 15px; overflow-x: auto; border-radius: 4px; }
+    code { font-family: Consolas, 'Courier New', monospace; }
+    ul, ol { margin-left: 1.5rem; }
+    .note { background: #eef8ff; padding: 10px 15px; border-left: 4px solid #66aaff; border-radius: 3px; }
+    .example { background: #f0f9f0; padding: 15px; border-left: 4px solid #4caf50; border-radius: 3px; }
+    footer { margin-top: 2rem; font-size: 0.9rem; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Quy Hoạch Động Chữ Số (Digit DP)</h1>
+  <p><strong>Digit DP</strong> là kỹ thuật chuyên sâu dùng để đếm và tổng hợp thông tin về chữ số của các số nguyên trong khoảng <code>[L, R]</code>, giúp giải quyết nhanh các bài toán có R rất lớn (lên đến 10<sup>18</sup>) bằng cách quy hoạch động theo chữ số và memoization.</p>
+
+  <h2>1. Cấu trúc chung</h2>
+  <!-- ... Phần 1-4 không đổi ... -->
+
+  <h2>5. Các bài toán điển hình từ VNOI Wiki</h2>
+  <p>Dưới đây là tuyển tập một số bài Digit DP phổ biến từ VNOI Wiki, kèm hướng dẫn giải đã được viết lại dễ hiểu:</p>
+
+  <h3>5.1. DIGITSUM — Tổng chữ số trong khoảng [L,R]</h3>
+  <div class="example">
+    <p>Cho số <code>K</code> (chuỗi) và số nguyên <code>D</code>, tính tổng chữ số của mọi số đếm từ <code>0</code> tới <code>K</code>, rồi trừ 1 (loại bỏ số 0).</p>
+  </div>
+  <p><strong>State:</strong> <code>dp[idx][sum][tight]</code>, với <code>sum</code> là tổng chữ số hiện tại mod <code>D</code>, <code>tight</code> là cờ giới hạn prefix.</p>
+  <p><strong>Transition:</strong> tại vị trí <code>idx</code> (từ phải sang trái), thử chữ số <code>d</code> từ 0 đến <code>(tight? digit[idx]:9)</code>. Cập nhật <code>newSum=(sum+d)%D</code>, <code>newTight=tight&(d==limit)</code>.</p>
+  <pre><code>long long dfs(int idx, int sum, bool tight) {
+    if (idx<0) return sum==0;  // hết chữ số
+    auto &res = memo[idx][sum][tight];
+    if (res!=-1) return res;
+    res=0;
+    int lim = tight? digits[idx]:9;
+    for(int d=0;d<=lim;++d)
+      res=(res + dfs(idx-1,(sum+d)%D,tight&&(d==lim)))%MOD;
+    return res;
+  }
+  long long solve(string K){
+    // chuyển K thành digits[] đảo ngược
+    memset(memo,-1,sizeof memo);
+    return (dfs(n-1,0,1)-1+MOD)%MOD; // trừ trường hợp số 0
+  }</code></pre>
+
+  <h3>5.2. SỐ LƯỢNG SỐ — Đếm sản phẩm & tổng chữ số trong [L,R]</h3>
+  <div class="example">
+    <p>Cho <code>t</code> test, mỗi test cho <code>l, r</code>. Đếm tổng số số x trong [l,r] sao cho tích x × (tổng chữ số x) nằm trong [l, r].</p>
+  </div>
+  <p>Chú ý quan sát: với mỗi tổng chữ số s (≤171), ta đếm số số ≤<code>R/s</code> có tổng chữ số =<code>s</code>. Dùng Digit DP để tính hàm <code>G(X,s)</code>.</p>
+  <pre><code>long long dfs(int idx, bool small, int sum) {
+    if(idx<0) return sum==target;
+    if(!small && memo[idx][sum]!=-1) return memo[idx][sum];
+    long long ans=0;
+    int lim= small?9:digits[idx];
+    for(int d=0;d<=lim;++d)
+      ans+=dfs(idx-1, small||(d<lim), sum+d);
+    if(!small) memo[idx][sum]=ans;
+    return ans;
+  }
+  long long G(long long X,int s){
+    if(X<=0) return 0;
+    // chuyển X -> digits[], set target=s, memset memo
+    return dfs(n-1, false, 0);
+  }
+  // main: với mỗi test, tổng hợp sum_{s=1..171}( G(r/s,s) - G((l-1)/s,s) )
+  </code></pre>
+
+  <h3>5.3. NUMTSN (369 Numbers) — Đếm số có #3=#6=#9 ≥1</h3>
+  <div class="example">
+    <p>Cho [L,R], đếm số sao cho số lần xuất hiện chữ số 3,6,9 bằng nhau và ≥1.</p>
+  </div>
+  <p>Dùng state <code>dp[idx][c3][c6][c9][tight]</code> đếm số số.</p>
+  <pre><code>long long dfs(int idx,int c3,int c6,int c9,bool tight){
+    if(idx<0) return (c3>0 && c3==c6 && c6==c9);
+    if(!tight && mem[idx][c3][c6][c9]!=-1) return mem[idx][c3][c6][c9];
+    long long res=0;
+    int lim=tight?digits[idx]:9;
+    for(int d=0;d<=lim;++d){
+      res+=dfs(idx-1, c3+(d==3), c6+(d==6), c9+(d==9), tight&&(d==lim));
+    }
+    if(!tight) mem[idx][c3][c6][c9]=res;
+    return res;
+  }
+  long long solve(string X){ /* khởi tạo mem, chuyển X->digits */ return dfs(n-1,0,0,0,1);
+  }
+  // Đáp án: solve(R) - solve(L-1)
+  </code></pre>
+
+  <h3>5.4. SỐ ĐẶC BIỆT — Tổng bình phương chữ số</h3>
+  <div class="example">
+    <p>Cho [L,R], đếm số sao cho khi lặp hàm f(x)=tổng bình phương chữ số, sẽ về 1.</p>
+  </div>
+  <p>Dùng Digit DP với state <code>dp[idx][sum][tight]</code>, cùng DFS ngoài để tìm tập số đặc biệt ≤1458.</p>
+  <pre><code>void buildSpecial(){
+  // DFS từ 1 lên toàn bộ graph sum->x để đánh dấu special
+}
+long long dfs(int idx,int s,bool tight){
+  if(idx<0) return special[s];
+  if(tight==0 && memo[idx][s]!=-1) return memo[idx][s];
+  long long cnt=0;
+  int lim= tight?digits[idx]:9;
+  for(int d=0;d<=lim;++d)
+    cnt+=dfs(idx-1, s+d*d, tight&&(d==lim));
+  if(tight==0) memo[idx][s]=cnt;
+  return cnt;
+}
+// solve as usual
+</code></pre>
+
+  <h3>5.5. LUCKY13 — Không có chữ số 3 liên tiếp</h3>
+  <div class="example">
+    <p>Đếm số trong [L,R] không chứa chuỗi "13".</p>
+  </div>
+  <p>State <code>dp[idx][prevIs1][tight]</code> theo cờ prevIs1 (chữ số trước có phải 1?).</p>
+  <pre><code>long long dfs(int idx,bool prev1,bool tight){
+  if(idx<0) return 1;
+  if(!tight && dp[prev1][idx]!=-1) return dp[prev1][idx];
+  long long res=0; int lim= tight?digits[idx]:9;
+  for(int d=0;d<=lim;++d){
+    if(prev1 && d==3) continue;
+    res+=dfs(idx-1, d==1, tight&&(d==lim));
+  }
+  if(!tight) dp[prev1][idx]=res;
+  return res;
+}
+</code></pre>
+
+  <h2>6. Ví dụ từ USACO</h2>
+  <p>Dưới đây là bài <strong>Odometer</strong> (USACO Silver) — Đếm số trong <code>[A, B]</code> sao cho một chữ số bất kỳ xuất hiện ≥50% tổng số chữ số.</p>
+  <p><strong>State:</strong> <code>dp[pos][tight][cntDiff][leading]</code><br>
+  - <code>pos</code>: chỉ số chữ số hiện tại (0..n-1).<br>
+  - <code>tight</code>: cờ prefix đã nhỏ hơn B hay chưa.<br>
+  - <code>cntDiff</code>: sự chênh lệch (offset) giữa số lần xuất hiện của chữ số mục tiêu và các chữ số khác.<br>
+  - <code>leading</code>: cờ đã bắt đầu (loại bỏ 0 dẫn đầu).</p>
+  <pre><code>#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+
+string s;
+ll memo[20][2][41][2]; // offset 40 để cntDiff có thể âm
+target = 1; // ví dụ: kiểm tra chữ số '1'
+
+ll dfs(int pos, bool tight, int diff, bool leading) {
+    if (pos == s.size()) {
+        // Kiếm số chữ số đã xét: total = leading ? (digits đã dùng) : 0
+        return (leading && diff > 0);
+    }
+    ll &res = memo[pos][tight][diff+20][leading];
+    if (!tight && res != -1) return res;
+    res = 0;
+    int limit = tight ? (s[pos] - '0') : 9;
+    for (int d = 0; d <= limit; ++d) {
+        bool nleading = leading || (d != 0);
+        bool ntight = tight && (d == limit);
+        int ndiff = diff;
+        if (nleading) {
+            ndiff += (d == target ? 1 : -1);
+        }
+        res += dfs(pos + 1, ntight, ndiff, nleading);
+    }
+    if (!tight) return res;
+    return res;
+}
+
+ll countRange(ll X) {
+    s = to_string(X);
+    memset(memo, -1, sizeof(memo));
+    return dfs(0, true, 0, false);
+}
+
+int main() {
+    ll A, B;
+    cin >> A >> B;
+    cout << (countRange(B) - countRange(A - 1));
+    return 0;
+}
+</code></pre>
+  <footer>
+    &copy; 2025 - Tổng hợp từ VNOI Wiki và USACO Guide.
+  </footer>
+  <h2>7. Ví dụ từ CSES</h2>
+  <p>Dưới đây là một ví dụ Digit DP tiêu biểu từ bộ đề CSES:</p>
+
+  <h3>7.1. Counting Numbers (CSES 2220)</h3>
+  <div class="example">
+    <p><em>Đề bài:</em> Đếm số nguyên trong <code>[a, b]</code> không có hai chữ số liền kề bằng nhau.</p>
+  </div>
+  <p><strong>State:</strong> <code>dp[pos][prevDigit+1][started][tight]</code>, với <code>prevDigit</code> là chữ số trước (–1 nếu chưa có), <code>started</code> cờ đã bắt đầu (bỏ qua 0 dẫn đầu), <code>tight</code> cờ ràng buộc.</p>
+  <p><strong>Transition:</strong>
+    <pre><code>ll dfs(int pos, int prev, bool started, bool tight) {
+    if (pos == n) return started ? 1 : 0;
+    if (!tight && memo[pos][prev+1][started] != -1) return memo[pos][prev+1][started];
+    ll res = 0;
+    int limit = tight ? digits[pos] : 9;
+    for (int d = 0; d <= limit; ++d) {
+      bool nstarted = started || d > 0;
+      if (nstarted && d == prev) continue;
+      bool ntight = tight && (d == limit);
+      res += dfs(pos+1, nstarted ? d : -1, nstarted, ntight);
+    }
+    if (!tight) memo[pos][prev+1][started] = res;
+    return res;
+  }
+
+  ll solve(ll a, ll b) {
+    // Chuyển b thành digits[], đặt n = digits.size(), memset memo=-1
+    ll resB = dfs(0, -1, false, true);
+    // Tương tự với a-1 để lấy resA
+    return resB - resA;
+  }</code></pre>
+  </p>
+  <p>Tham khảo: đề bài Counting Numbers trên CSES ([cses.fi](https://cses.fi/problemset/task/2220)); giải thích chi tiết trên GeeksforGeeks ([geeksforgeeks.org](https://www.geeksforgeeks.org/cses-solutions-counting-numbers/?utm_source=chatgpt.com)); video minh hoạ giải thuật ([youtube.com](https://www.youtube.com/watch?v=lD_irvBkeOk&utm_source=chatgpt.com)).</p>
+</body>
+</html>
