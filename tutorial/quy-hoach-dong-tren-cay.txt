@@ -1,0 +1,111 @@
+#----------------------------------------------DP on tree----------------------------------------------------
+* Lý thuyết:
+    + Định nghĩa:
+        *dp trên cây là kỹ thuật tận dụng cấu trúc con tối ưu của cây để thiết lập các cây con lưu các trạng thái qhđ
+        *mô hình : định nghĩa dp[u][..] là một trạng thái của bài toán cho cây con gốc u (chúng phụ thuộc và các con của u)
+    + Các tập hơp rời nhau trên cây :
+        đề bài : cho cây có n đỉnh đỉnh thứ i có giá trị là val[i] hãy tìm cách chọn một tập đỉnh con sao cho không có 2 cạnh nào kề nhau và tổng giá trị là lớn nhất
+        Tư tưởng : dp[u] cách chia tối ưu cho cây con gốc u 
+            - nếu chọn không chọn đỉnh u dp[u]=max(dp[v]) (v là đỉnh kề của u)
+            - nếu chọn u thì dp[u]=max(dp[v])+val[u] (v là các con của u mà không kề u )
+            - ds = dp[root]
+        cách làm của vnoi:
+            dp1[u] = giá trị lớn nhất của các đỉnh được chọn trong cây con gốc u trừ u
+            dp2[u] = giả trị lớn nhất của các đỉnh được chon trong cây con gốc u luôn có u
+            
+            --> dp1[u]=max(tổng(dp2[v]),tổng(dp1[v])) 
+            --> dp2[u]=max(tổng(dp1[v]))+val[u]
+            (v là con của cây con gốc u)
+* Các kỹ thuật
+    - kỹ thuật chuyển gốc:
+        # mô tả : là kỹ thuật chỉ sử dụng 2 lần dfs để tính mọi kết quả từ các gốc khác nhau thay vì phải dfs n lần trên mỗi đỉnh
+        # cách áp dụng : khi bỏ đi cạch này kết quả của bài toán gần giống ban đầu
+        nếu đổi gốc từ u sang v :
+            - ngắt kết nối cây con gốc u với cây con gốc u bằng cách hủy đi sự đóng góp của cạnh (v,u) vào u
+            - nối lại u với v u trở thành cây con của v nên phải đóng góp dp[u] vào dp[v] qua cạnh u(u,v)
+            - khôi phục lại kq sau khi đã cập nhật hết kết quả 
+        + ví du: cho một cây có n đỉnh và có trọng số . q truy vấn hỏi tổng đường đi ngắn nhất đến mọi đỉnh nếu đỉnh u là gốc là bao nhiêu
+        $ đặt dp[u] là tổng đường đi ngắn nhất từ các cây con trong u đến u
+            dp[lá] =0;
+            dp[u]=tổng(dp[v]+w(u,v))
+            đáp số cho 1 là dp[1]
+            ta chuyển gốc sang các cạnh kề của u là v
+            lưu giá trị cũ lại: dpu=dp[u] , dpv=dp[v]
+            gỡ sự đóng góp : dp[u]-=dp[v]+w(u,v)
+            nối lại vào đỉnh v : dp[v]+=dp[u]+w(u,v)
+            ghi nhận kết quả ans[v]=dp[v]
+            đi sâu vào 1 nhánh cho đến khi không quay lai được nữa rồi mới khôi phục giá trị
+    - kỹ thuật knapsach trên cây
+        + vấn đề : cho 1 cây n đỉnh đỉnh i có gt là val[i] và một số k[i] . yêu cầu chọn không quá k[i] đỉnh sao cho giá trị là lớn nhất trong cây con gốc i
+        /* 
+        + nháp:
+            đặt dp[u][j] là giá trị lớn nhất mà số đỉnh được chọn không quá j phần tử (j<=k[u])
+            ds = dp[1][k[1]];
+            xét cách con mà liên thông với v 
+            tương tự như kết đổ túi v vào túi u 
+            khi đó để tránh sự sai sót ta tạo ra mảng tmp[] để lưu tạm thời kết quả của túi bất kỳ tại thời điểm này
+            nếu không chọn túi u thì túi u sẽ có 0 pt ngược lại thì có 
+            tmp[j1+j2] = max(tmp[j],dp[u][j1]+dp[v][j2])
+            cập nhật dp[u][j]=tmp[j];
+            dfs xuống các nút con
+        */
+    - kỹ thuật dsu trên cây
+        + để hợp nhất các tính chất của con lên cha một cách nhanh chóng (o(logn))
+        + ý tưởng small-to-large mering
+        : ta luôn kết hợp cái nhỏ vào cái to để đảm bảo tối ưu số lần di chuyển    
+        # các bước thực hiện : 
+            # vơi mỗi đỉnh u chọn một đỉnh v là con của cây gốc u mà sz[v] là max lưu heavy[u]=v và tính sz[u]
+            # xử lý có hàm dfs(int u,bool keep) 
+            # xử lý các v != heavy[u] (v là con của u) ----> xử lý xong rồi xóa data
+            # xử lý các con --------> lớn giữ lại data
+            # với mỗi con nhỏ gộp kết quả và con nặng 
+            # cập nhật con nặng lên u
+            # ghi kết quả
+            # nếu u không là con nặng xóa toàn bộ data để giảm thiểu độ phức tạp
+
+        + ví dụ : cho một cây n đỉnh mỗi đỉnh có 1 giá trị col[i] lưu màu của đỉnh hởi mỗi cây đỉnh có bao nhiêu màu khác nhau thuộc cây con của nó
+        hàm dfs1(int u,int dad) để tính heavy[] và sz[]
+        void dfs1(int u,int dad){
+            heavy[u]=-1;
+            sz[u]=1;
+            int tmp=0;
+            int ds1=0;
+            for(int v:adj[u]) if(v!=dad){
+                dfs1(v,u);
+                sz[u]+=sz[v];
+                if(ds1<sz[v]){
+                    ds1=sz[v];
+                    heavy[u]=v;
+                }    
+            }
+        }
+        void add(int u,int dad){
+            int c=col[u];
+            if(cnt[c]==0) ds++;
+            cnt[c]++;
+            for(int v:adj[u]) if(v!=dad){
+                add(v,u);
+            }
+        }
+        void del(int u,int dad){
+            int c=col[u];
+            cnt[c]--;
+            if(cnt[c]==0) ds--;
+            for(int v:adj[u]) if(v!=dad){
+                del(v,u);
+            }
+        }
+        void dfs2(int u,int dad,int keep){
+            for(int v:adj[u]) if(v!=dad&&v!=heavy[u]){
+                dfs2(v,u,0);
+            }// tính hết các con nhẹ
+            dfs2(heavy[u],u,1);// tính con nặng
+            for(int v:adj[u]) if(v!=dad&&v!=heavy[u]){
+                add(v,u); // thêm trực tiếp các con nhẹ vào gốc u 
+            }
+            add(u,dad);// thêm con nặng vào
+            ans[u]=ds; // cập nhật kq
+            if(!keep){
+                del(u,dad); // xóa dữ liệu con nhẹ
+            }
+        }
