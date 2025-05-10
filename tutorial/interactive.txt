@@ -1,0 +1,6 @@
+############################################################# INTERACTIVE ##########################
+* Mô hình chung :
+    + ta phải viết được một chương trình để có thể chiến thắng bot mà người khác viết sẵn : (interator)
+    + cần : liên tục trao đổi thông tin với interator để lấy dữ liệu
+    + để gửi thông tin cho interator ta cần sử dụng lệnh fflush(stdout); sau mỗi lần in kết quả
+    + rồi nhận thông tin từ trình chấm rồi lại tương tác cho đến khi đạt được mục đích của đề bài
